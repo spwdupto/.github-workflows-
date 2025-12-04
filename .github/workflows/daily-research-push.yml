@@ -10,34 +10,39 @@ jobs:
   push-digest:
     runs-on: ubuntu-latest
     steps:
-    - name: Trigger Dify Workflow
-      env:
-        DIFY_API_URL: ${{ secrets.DIFY_API_URL }}
-        DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
-      run: |
-       - name: Trigger Dify Workflow
+      - name: Trigger Dify Workflow
         env:
+          DIFY_API_URL: ${{ secrets.DIFY_API_URL }}
           DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
-          DIFY_API_URL: ${{ secrets.DIFY_API_URL }} 
         run: |
-          curl -X POST "$DIFY_API_URL" \
-          -H "Authorization: Bearer $DIFY_API_KEY" \
-          -H "Content-Type: application/json" \
-          -d '{
-                "inputs": {}, 
-                "response_mode": "blocking",
-                "user": "github-action-bot"
-              }'
-        
-        http_code=$(echo "$response" | tail -n1)
-        body=$(echo "$response" | sed '$d')
-        
-        echo "HTTP Status: $http_code"
-        echo "Response body: $body"
-        
-        if [ "$http_code" = "200" ]; then
-          echo "✅ Daily push completed successfully"
-        else
-          echo "❌ Push failed with status $http_code"
-          exit 1
-        fi
+          echo "🚀 Starting request to Dify..."
+          
+          # 发送请求并捕获输出
+          # -s: 静默模式，不显示进度条
+          # -w: 在输出末尾追加 HTTP 状态码
+          response=$(curl -s -w "\n%{http_code}" -X POST "$DIFY_API_URL" \
+            -H "Authorization: Bearer $DIFY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+                  "inputs": {}, 
+                  "response_mode": "blocking",
+                  "user": "github-action-bot"
+                }')
+
+          # 分离 HTTP 状态码（最后一行）和 响应体（除最后一行外的所有内容）
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "----------------------------------------"
+          echo "HTTP Status: $http_code"
+          echo "Response Body: $body"
+          echo "----------------------------------------"
+
+          # 检查状态码是否为 200
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Daily push completed successfully"
+          else
+            echo "❌ Push failed with status $http_code"
+            # 退出码设为 1，让 Github Action 显示为失败
+            exit 1
+          fi
