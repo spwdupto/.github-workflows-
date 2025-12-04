@@ -10,21 +10,24 @@ jobs:
   push-digest:
     runs-on: ubuntu-latest
     steps:
-    - name: Call Dify Workflow
+    - name: Trigger Dify Workflow
       env:
         DIFY_API_URL: ${{ secrets.DIFY_API_URL }}
         DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
       run: |
-        echo "Triggering daily research digest push..."
-        response=$(curl -s -w "\n%{http_code}" \
-          -X POST "$DIFY_API_URL/run" \
+       - name: Trigger Dify Workflow
+        env:
+          DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
+          DIFY_API_URL: ${{ secrets.DIFY_API_URL }} 
+        run: |
+          curl -X POST "$DIFY_API_URL" \
           -H "Authorization: Bearer $DIFY_API_KEY" \
           -H "Content-Type: application/json" \
           -d '{
-            "inputs": {},
-            "response_mode": "blocking",
-            "user": "github-actions"
-          }')
+                "inputs": {}, 
+                "response_mode": "blocking",
+                "user": "github-action-bot"
+              }'
         
         http_code=$(echo "$response" | tail -n1)
         body=$(echo "$response" | sed '$d')
