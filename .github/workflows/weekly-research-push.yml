@@ -1,10 +1,11 @@
-name: Daily Research Digest Push
+name: Weekly Research Digest Push
 
 on:
   schedule:
-    # 每天 UTC 1:00 (北京时间 9:00)
-    - cron: '0 1 * * *'
-  workflow_dispatch:  # 手动触发调试
+    # 每周一 UTC 1:00 (北京时间 9:00)
+    # 格式顺序：分 时 日 月 周
+    - cron: '0 1 * * 1'
+  workflow_dispatch:  # 保留手动触发，方便你随时测试
 
 jobs:
   push-digest:
@@ -15,18 +16,13 @@ jobs:
           DIFY_API_URL: ${{ secrets.DIFY_API_URL }}
           DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
         run: |
-          echo "🚀 Starting request to Dify..."
+          echo "🚀 Starting weekly request to Dify..."
 
           # --- 1. 生成时间变量 ---
-          # 生成当前时间戳（UTC时间，格式为 YYYY-MM-DD HH:MM:SS）
-          # Dify 默认使用 UTC，建议保持此格式。
           CURRENT_TIME_UTC=$(date -u "+%Y-%m-%d %H:%M:%S")
           echo "Generated Target Time (UTC): $CURRENT_TIME_UTC"
 
-          # --- 2. 构造 JSON Payload 并发送请求 ---
-          
-          # 注意：为了将 Shell 变量 $CURRENT_TIME_UTC 嵌入到 JSON 字符串中，
-          # 我们需要使用双引号包裹 JSON 字符串，并确保内部的双引号正确转义（这里使用单引号来定义 JSON 字符串，避开转义问题）。
+          # --- 2. 发送请求 ---
           response=$(curl -s -w "\n%{http_code}" -X POST "$DIFY_API_URL" \
             -H "Authorization: Bearer $DIFY_API_KEY" \
             -H "Content-Type: application/json" \
@@ -38,7 +34,6 @@ jobs:
                   "user": "github-action-bot"
                 }')
 
-          # 分离 HTTP 状态码（最后一行）和 响应体（除最后一行外的所有内容）
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 
@@ -47,11 +42,9 @@ jobs:
           echo "Response Body: $body"
           echo "----------------------------------------"
 
-          # 检查状态码是否为 200
           if [ "$http_code" -eq 200 ]; then
-            echo "✅ Daily push completed successfully"
+            echo "✅ Weekly push completed successfully"
           else
             echo "❌ Push failed with status $http_code"
-            # 退出码设为 1，让 Github Action 显示为失败
             exit 1
           fi
