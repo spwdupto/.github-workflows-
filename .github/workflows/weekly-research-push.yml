@@ -22,15 +22,16 @@ jobs:
           CURRENT_TIME_UTC=$(date -u "+%Y-%m-%d %H:%M:%S")
           echo "Generated Target Time (UTC): $CURRENT_TIME_UTC"
 
-          # --- 2. 发送请求 ---
+          # --- 2. 发送请求 (改为 streaming 模式并增加超时容忍) ---
           response=$(curl -s -w "\n%{http_code}" -X POST "$DIFY_API_URL" \
             -H "Authorization: Bearer $DIFY_API_KEY" \
             -H "Content-Type: application/json" \
+            --connect-timeout 10 \
             -d '{
                   "inputs": {
                       "target_time": "'"$CURRENT_TIME_UTC"'"
                   }, 
-                  "response_mode": "blocking",
+                  "response_mode": "streaming",
                   "user": "github-action-bot"
                 }')
 
